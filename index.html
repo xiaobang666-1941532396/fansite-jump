@@ -107,10 +107,6 @@
       return;
     }
 
-    // ★★★ 当前最新隧道地址（每次推送时自动更新） ★★★
-    var FALLBACK_URL = 'https://outputs-ceo-sustainable-suggesting.trycloudflare.com';
-
-    // GitHub Gist 配置 — push-url.py 自动更新
     var GIST_ID = '445b1402494bc2247e6ecf95f236b671';
     var GIST_RAW = 'https://gist.githubusercontent.com/xiaobang666-1941532396/' + GIST_ID + '/raw/target-url.txt';
 
@@ -126,47 +122,45 @@
       dot.style.animation = 'none';
       goBtn.href = url;
       goBtn.style.display = 'inline-block';
-      setTimeout(function() {
-        window.location.href = url;
-      }, 500);
+      setTimeout(function() { window.location.href = url; }, 500);
     }
 
-    function showFallback() {
-      localStorage.removeItem('fansite_last_url');
-      var url = FALLBACK_URL;
-      if (url && url.indexOf('trycloudflare.com') !== -1) {
-        showSuccess(url);
-        return;
-      }
-      // 最终兜底
-      statusEl.textContent = '连接失败，请稍后重试';
-      dot.style.background = '#ef4444';
-      dot.style.animation = 'none';
+    function showRetry() {
+      statusEl.textContent = '正在获取服务器地址...';
+      dot.style.background = '#f59e0b';
+      dot.style.animation = 'pulse 1s infinite';
       fallback.style.display = 'block';
-      manualUrl.textContent = FALLBACK_URL;
-      goBtn.href = FALLBACK_URL;
-      goBtn.style.display = 'inline-block';
+      manualUrl.innerHTML = '请<a href="javascript:location.reload()" style="color:#60a5fa;text-decoration:underline;">刷新页面</a>重试，或联系管理员';
+      goBtn.style.display = 'none';
     }
 
-    // 1. 先尝试从 Gist 获取最新地址
-    fetch(GIST_RAW + '?t=' + Date.now())
-      .then(function(r) {
-        if (!r.ok) throw new Error('Gist fetch failed');
-        return r.text();
-      })
-      .then(function(url) {
-        url = url.trim();
-        if (url && url.indexOf('trycloudflare.com') !== -1) {
-          localStorage.setItem('fansite_last_url', url);
-          showSuccess(url);
-        } else {
-          throw new Error('Invalid URL in Gist');
-        }
-      })
-      .catch(function() {
-        // 2. Gist 失败 → 使用备用地址
-        showFallback();
-      });
+    var retries = 0;
+    function tryFetch() {
+      fetch(GIST_RAW + '?t=' + Date.now())
+        .then(function(r) {
+          if (!r.ok) throw new Error('Gist fetch failed');
+          return r.text();
+        })
+        .then(function(url) {
+          url = url.trim();
+          if (url && url.indexOf('trycloudflare.com') !== -1) {
+            showSuccess(url);
+          } else {
+            throw new Error('Invalid URL');
+          }
+        })
+        .catch(function() {
+          retries++;
+          if (retries < 3) {
+            // 指数退避: 1s, 3s, 5s
+            setTimeout(tryFetch, retries * 1000 + 500);
+          } else {
+            showRetry();
+          }
+        });
+    }
+
+    tryFetch();
   })();
   </script>
 </body>
