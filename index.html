@@ -108,7 +108,7 @@
     }
 
     // ★★★ 当前最新隧道地址（每次推送时自动更新） ★★★
-    var FALLBACK_URL = 'https://preparation-athletes-environment-river.trycloudflare.com';
+    var FALLBACK_URL = 'https://outputs-ceo-sustainable-suggesting.trycloudflare.com';
 
     // GitHub Gist 配置 — push-url.py 自动更新
     var GIST_ID = '445b1402494bc2247e6ecf95f236b671';
@@ -132,9 +132,8 @@
     }
 
     function showFallback() {
-      // 先尝试 localStorage 缓存
-      var cached = localStorage.getItem('fansite_last_url');
-      var url = cached || FALLBACK_URL;
+      localStorage.removeItem('fansite_last_url');
+      var url = FALLBACK_URL;
       if (url && url.indexOf('trycloudflare.com') !== -1) {
         showSuccess(url);
         return;
